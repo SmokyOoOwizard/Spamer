@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Spamer": {
+      "commandName": "Project",
+      "commandLineArgs": "-p TCP -t 127.0.0.1 -tp 22 -m Spamer.exe -n 1 -mps 10"
+    }
+  }
+}
