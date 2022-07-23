@@ -2,7 +2,7 @@
 
 namespace Spamer
 {
-	public class Spamer : ISpamerInfo
+	public class Spamer
 	{
 		private readonly SpamerSettings settings;
 		private ThreadSpamer[] threads = Array.Empty<ThreadSpamer>();
@@ -18,7 +18,7 @@ namespace Spamer
 				var total = 0u;
 				for (int i = 0; i < threads.Length; i++)
 				{
-					total += threads[i].MessagesSended;
+					total += threads[i].Statistics.MessagesSended;
 				}
 				return total;
 			}
@@ -28,7 +28,7 @@ namespace Spamer
 
 		public double Seconds => timer.Elapsed.TotalSeconds;
 
-		public ISpamerThreadInfo this[int threadIndex]
+		public ThreadSpamer this[int threadIndex]
 		{
 			get
 			{

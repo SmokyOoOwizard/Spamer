@@ -6,6 +6,7 @@ namespace Spamer
 	public readonly struct SpamerSettings
 	{
 		public readonly float MaxMessagesPerSeconds;
+		public readonly float MessageSendTime;
 		public readonly int ThreadsCount;
 
 		public readonly ProtocolType Protocol;
@@ -16,11 +17,17 @@ namespace Spamer
 
 		public readonly IMessageProvider? MessageProvider;
 
+		public readonly string MessageFilePath;
+
+		public readonly bool SendRawMessageFile;
+
 		public readonly bool EnableRandomThreadStartOffset;
+		public readonly bool EnableNewConnectionPerMessage;
 
 		public SpamerSettings()
 		{
 			MaxMessagesPerSeconds = -1;
+			MessageSendTime = 0;
 			ThreadsCount = 1;
 
 			Protocol = ProtocolType.TCP;
@@ -29,14 +36,20 @@ namespace Spamer
 
 			ConnectTimeout = 10;
 
-			MessageProvider = null;
+			MessageFilePath = string.Empty;
+
+			SendRawMessageFile = true;
 
 			EnableRandomThreadStartOffset = false;
+			EnableNewConnectionPerMessage = false;
+
+			MessageProvider = null;
 		}
 
-		public SpamerSettings(EntryPoint args, IMessageProvider MessageProvider)
+		public SpamerSettings(EntryPoint args)
 		{
 			MaxMessagesPerSeconds = args.MaxMessagesPerSeconds;
+			MessageSendTime = 1 / args.MaxMessagesPerSeconds;
 			ThreadsCount = args.ThreadsCount;
 
 			Protocol = args.Protocol.Value;
@@ -45,9 +58,16 @@ namespace Spamer
 
 			ConnectTimeout = args.ConnectTimeout;
 
-			this.MessageProvider = MessageProvider;
+			MessageFilePath = args.MessageFilePath;
+
+			SendRawMessageFile = args.SendRawMessage;
 
 			EnableRandomThreadStartOffset = args.EnableRandomThreadStartOffset;
+			EnableNewConnectionPerMessage = args.EnableNewConnectionPerMessage;
+
+			// HACK
+			MessageProvider = null;
+			this.MessageProvider = MessageProviderFactory.CreateProvider(this);
 		}
 	}
 }

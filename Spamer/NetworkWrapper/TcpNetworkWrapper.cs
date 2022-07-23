@@ -6,10 +6,10 @@ namespace Spamer.NetworkWrapper
 	{
 		private readonly SpamerSettings settings;
 
-		private TcpClient client = new TcpClient();
+		private TcpClient? client;
 		private NetworkStream? stream;
 
-		public bool Connected => client.Connected;
+		public bool Connected => client?.Connected ?? false;
 
 		public TcpNetworkWrapper(SpamerSettings settings)
 		{
@@ -18,17 +18,28 @@ namespace Spamer.NetworkWrapper
 
 		public void Connect()
 		{
-			if (stream != null)
+			if (client != null)
 			{
-				stream.Close();
-				client.Close();
+				return;
 			}
+
+			client = new TcpClient();
 
 			if (!client.ConnectAsync(settings.TargetHostname, settings.TargetPort).Wait((int)(settings.ConnectTimeout * 1000)))
 			{
+				client = null;
 				throw new TimeoutException();
 			}
 			stream = client.GetStream();
+		}
+
+		public void Disconnect()
+		{
+			stream?.Close();
+			client?.Close();
+
+			client = null;
+			stream = null;
 		}
 
 		public void Send(byte[] data)
@@ -39,7 +50,7 @@ namespace Spamer.NetworkWrapper
 		public void Dispose()
 		{
 			stream?.Close();
-			client.Close();
+			client?.Close();
 		}
 	}
 }

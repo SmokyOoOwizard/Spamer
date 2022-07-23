@@ -6,6 +6,8 @@
 		bool Connected { get; }
 
 		void Connect();
+		void Disconnect();
+
 		void Send(byte[] data);
 	}
 }

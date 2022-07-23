@@ -3,21 +3,15 @@ using System.Diagnostics;
 
 namespace Spamer
 {
-	public class ThreadSpamer : IDisposable, ISpamerThreadInfo
+	public class ThreadSpamer : IDisposable
 	{
 		private readonly SpamerSettings settings;
 
 		private Thread thread;
 		private volatile bool running;
 
-		public bool Connected { get; private set; }
-		public uint ErrorCount { get; private set; }
-
-		public double MessageTime { get; private set; }
-		public double SendTime { get; private set; }
-		public double RoundTime { get; private set; }
-		public double SleepTime { get; private set; }
-		public uint MessagesSended { get; private set; }
+		private readonly ThreadSpamerStatistics statistics = new ThreadSpamerStatistics();
+		public IThreadSpamerStatistics Statistics => statistics;
 
 		public ThreadSpamer(SpamerSettings settings)
 		{
@@ -49,8 +43,6 @@ namespace Spamer
 			var actionTimer = new Stopwatch();
 			var roundTimer = new Stopwatch();
 
-			var maxSendTime = 1 / settings.MaxMessagesPerSeconds;
-
 			if (settings.EnableRandomThreadStartOffset)
 			{
 				Thread.Sleep(Random.Shared.Next(5 * 1000));
@@ -63,7 +55,7 @@ namespace Spamer
 					if (!network.Connected)
 					{
 						network.Connect();
-						Connected = network.Connected;
+						statistics.Connected = network.Connected;
 					}
 
 					roundTimer.Restart();
@@ -72,35 +64,47 @@ namespace Spamer
 					var data = settings.MessageProvider.GenerateMessage();
 					actionTimer.Stop();
 
-					MessageTime = actionTimer.Elapsed.TotalSeconds;
+					statistics.MessageTime.Put(actionTimer.Elapsed.TotalSeconds);
 
 					actionTimer.Restart();
 					network.Send(data);
-					MessagesSended++;
 					actionTimer.Stop();
 
-					SendTime = actionTimer.Elapsed.TotalSeconds;
+					statistics.MessagesSended++;
+
+					statistics.SendTime.Put(actionTimer.Elapsed.TotalSeconds);
 
 					roundTimer.Stop();
-					RoundTime = roundTimer.Elapsed.TotalSeconds;
+					statistics.RoundTime.Put(roundTimer.Elapsed.TotalSeconds);
 
-					SleepTime = 0;
+					if (settings.EnableNewConnectionPerMessage)
+					{
+						network.Disconnect();
+						statistics.Connected = network.Connected;
+					}
+
 					if (settings.MaxMessagesPerSeconds > 0)
 					{
-						var sleepTime = maxSendTime - roundTimer.Elapsed.TotalSeconds;
+						var sleepTime = settings.MessageSendTime - roundTimer.Elapsed.TotalSeconds;
 						if (sleepTime > 0)
 						{
-							SleepTime = sleepTime;
+							statistics.SleepTime.Put(sleepTime);
 							Thread.Sleep((int)(sleepTime * 1000));
+						}
+						else
+						{
+							statistics.SleepTime.Put(0);
 						}
 					}
 				}
 				catch
 				{
-					ErrorCount++;
-					Connected = network.Connected;
+					statistics.ErrorCount++;
+					statistics.Connected = network.Connected;
 				}
 			}
+
+			network.Dispose();
 		}
 
 		public void Dispose()

@@ -22,6 +22,11 @@ namespace Spamer.NetworkWrapper
 			client.Connect(settings.TargetHostname, settings.TargetPort);
 		}
 
+		public void Disconnect()
+		{
+			client.Close();
+		}
+
 		public void Send(byte[] data)
 		{
 			client.Send(data);

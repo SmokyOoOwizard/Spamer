@@ -15,7 +15,7 @@ namespace Spamer
 
 		[Required]
 		[IpValidation]
-		[Option(ShortName = "t", LongName = "target", Description = "Target ip")]
+		[Option(ShortName = "t", LongName = "target", Description = "Target host")]
 		public string TargetAddress { get; set; }
 
 		[Required]
@@ -40,15 +40,16 @@ namespace Spamer
 		[Option(ShortName = "ro", LongName = "randomThreadOffset", Description = "Enable random thread start offset from 0 to 5 seconds")]
 		public bool EnableRandomThreadStartOffset { get; set; } = false;
 
+		[Option(ShortName = "ne", LongName = "newConnectionPerMessage", Description = "Enable new connection for each message")]
+		public bool EnableNewConnectionPerMessage { get; set; } = false;
+
 
 
 		private bool exit = false;
 
 		private void OnExecute()
 		{
-			Spamer spamer = new Spamer(new SpamerSettings(this, new HelloWorldMessageProvider()));
-			var info = spamer as ISpamerInfo;
-
+			Spamer spamer = new Spamer(new SpamerSettings(this));
 			spamer.Start();
 
 			Console.CancelKeyPress += (_, args) =>
@@ -62,23 +63,28 @@ namespace Spamer
 				Thread.Sleep(10);
 				Console.Clear();
 
-				for (int i = 0; i < info.ThreadsCount; i++)
+				const string TIME_FORMAT = "N5";
+
+				for (int i = 0; i < spamer.ThreadsCount; i++)
 				{
-					var threadInfo = info[i];
-					Console.WriteLine($"Thread {i}\t Round: {threadInfo.RoundTime.ToString("N4")}s\t " +
-						$"Message: {threadInfo.MessageTime.ToString("N4")}s\t " +
-						$"Send: {threadInfo.SendTime.ToString("N4")}s\t " +
-						$"Sleep: {threadInfo.SleepTime.ToString("N4")}s\t " +
-						$"Sended: {threadInfo.MessagesSended}\t " +
-						$"Connected: {threadInfo.Connected}\t " +
-						$"Errors: {threadInfo.ErrorCount}");
+					var threadInfo = spamer[i];
+					Console.WriteLine($"Thread {i}\t Round: {threadInfo.Statistics.RoundTime.Avg100Value.ToString(TIME_FORMAT)}s\t " +
+						$"Message: {threadInfo.Statistics.MessageTime.Avg100Value.ToString(TIME_FORMAT)}s\t " +
+						$"Send: {threadInfo.Statistics.SendTime.Avg100Value.ToString(TIME_FORMAT)}s\t " +
+						$"Sleep: {threadInfo.Statistics.SleepTime.Avg100Value.ToString(TIME_FORMAT)}s\t " +
+						$"Sended: {threadInfo.Statistics.MessagesSended}\t " +
+						$"Connected: {threadInfo.Statistics.Connected}\t " +
+						$"Errors: {threadInfo.Statistics.ErrorCount}");
 				}
 
-				Console.WriteLine($"Time: {new TimeSpan(0, 0, 0, (int)info.Seconds, 0)}\t Total messages sended: {info.TotalSendedMessages}\t Avg messages per second: {info.AvgMessagesPerSeconds}");
+				Console.WriteLine($"Time: {new TimeSpan(0, 0, 0, (int)spamer.Seconds, 0)}\t " +
+					$"Total messages sended: {spamer.TotalSendedMessages}\t " +
+					$"Avg messages per second: {spamer.AvgMessagesPerSeconds.ToString(TIME_FORMAT)}");
 			}
 
-			Console.WriteLine("Clean up...");
+			Console.Write("Clean up...");
 			spamer.Stop();
+			Console.WriteLine(" Done!");
 		}
 	}
 }
