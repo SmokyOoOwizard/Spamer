@@ -9,6 +9,11 @@
 				return new RawMessageProvider(settings);
 			}
 
+			if (settings.CustomMessageProvider != null)
+			{
+				return Activator.CreateInstance(settings.CustomMessageProvider.Value.MessageProviderType) as IMessageProvider;
+			}
+
 			return new HelloWorldMessageProvider();
 		}
 	}

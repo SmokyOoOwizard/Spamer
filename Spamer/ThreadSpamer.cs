@@ -1,4 +1,5 @@
-﻿using Spamer.NetworkWrapper;
+﻿using Spamer.MessageProvider;
+using Spamer.NetworkWrapper;
 using System.Diagnostics;
 
 namespace Spamer
@@ -42,6 +43,7 @@ namespace Spamer
 			var network = NetworkWrapperFactory.CreateWrapper(settings);
 			var actionTimer = new Stopwatch();
 			var roundTimer = new Stopwatch();
+			var messageProvider = MessageProviderFactory.CreateProvider(settings);
 
 			if (settings.EnableRandomThreadStartOffset)
 			{
@@ -61,7 +63,7 @@ namespace Spamer
 					roundTimer.Restart();
 
 					actionTimer.Restart();
-					var data = settings.MessageProvider.GenerateMessage();
+					var data = messageProvider.GenerateMessage();
 					actionTimer.Stop();
 
 					statistics.MessageTime.Put(actionTimer.Elapsed.TotalSeconds);

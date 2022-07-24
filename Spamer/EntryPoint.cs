@@ -82,9 +82,9 @@ namespace Spamer
 					$"Avg messages per second: {spamer.AvgMessagesPerSeconds.ToString(TIME_FORMAT)}");
 			}
 
-			Console.Write("Clean up...");
+			Console.Write("Clean up... ");
 			spamer.Stop();
-			Console.WriteLine(" Done!");
+			Console.WriteLine("Done!");
 		}
 	}
 }
