@@ -9,7 +9,7 @@ namespace Spamer.NetworkWrapper
 		private TcpClient? client;
 		private NetworkStream? stream;
 
-		public bool Connected => client?.Connected ?? false;
+		public bool Connected => client?.Client.Connected ?? false;
 
 		public TcpNetworkWrapper(SpamerSettings settings)
 		{
@@ -18,7 +18,7 @@ namespace Spamer.NetworkWrapper
 
 		public void Connect()
 		{
-			if (client != null)
+			if (client != null && Connected)
 			{
 				return;
 			}
