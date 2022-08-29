@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  Publish:
+    strategy:
+      matrix:
+        kind: ['linux', 'windows', 'macOS']
+        include:
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
+          - kind: windows
+            os: windows-latest
+            target: win-x64
+          - kind: macOS
+            os: macos-latest
+            target: osx-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore
+      run: dotnet restore
+    - name: Build
+      shell: bash
+      run: |
+        TAG=${{ github.event.release.tag_name }}
+        VERSION=${TAG#v}
+        echo "VERSION=${VERSION}" >> $GITHUB_ENV
+        echo "RELEASE_NAME=${{ github.event.release.name }}_${VERSION}" >> $GITHUB_ENV
+        
+        dotnet build -c Release -p:Version=$VERSION
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+    - name: Pack
+      shell: bash
+      run: |
+          # Build everything
+          dotnet publish --runtime "${{ matrix.target }}" -p:Version=$VERSION -c Release -o "$RELEASE_NAME" 
+
+          PACKAGE_NAME="${RELEASE_NAME}_${{ matrix.target }}"
+          # Pack files
+          if [ "${{ matrix.target }}" == "win-x64" ]; then
+            7z a -tzip "${PACKAGE_NAME}.zip" "./${RELEASE_NAME}/*"
+          else
+            tar czvf "${PACKAGE_NAME}.tar.gz" "$RELEASE_NAME"
+          fi
+
+          # Delete output directory
+          rm -r "$RELEASE_NAME"
+    - name: Publish
+      uses: softprops/action-gh-release@v1
+      with:
+        files: "${{ env.RELEASE_NAME }}*"
+      env:
+        TO_UPLOAD: $RELEASE_NAME
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
