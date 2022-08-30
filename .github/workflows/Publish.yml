@@ -44,7 +44,7 @@ jobs:
       shell: bash
       run: |
           # Build everything
-          dotnet publish --runtime "${{ matrix.target }}" -p:Version=$VERSION -c Release -o "$RELEASE_NAME" 
+          dotnet publish --runtime "${{ matrix.target }}" -p:Version=$VERSION -c Release -o "$RELEASE_NAME"  --self-contained true
 
           PACKAGE_NAME="${RELEASE_NAME}_${{ matrix.target }}"
           # Pack files
